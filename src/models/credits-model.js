@@ -1,0 +1,309 @@
+const db = require("../database");
+
+const saveCredit = async (req, res) => {
+  const { id, payment_id, client_id, value, date, next, previous, register_date, mode } = req.body;
+  const total_value = value * 1000;
+  const total = total_value + total_value * 0.2;
+  const newNext = next ? next : 0;
+  const newPrevious = previous ? previous : 0;
+  const state = 1;
+
+  const newCredit = {
+    id,
+    next: newNext,
+    previous: newPrevious,
+    payment_id,
+    client_id,
+    value: total_value,
+    date,
+    total,
+    mode,
+    state,
+    register_date,
+    mode,
+  };
+
+  await db.query("INSERT INTO credits set ?", [newCredit], (err, newCredit) => {
+    if (err)
+      return res
+        .status(500)
+        .send({ respuesta: "Error al guardar el credito." });
+
+    if (!newCredit)
+      return res
+        .status(404)
+        .send({ respuesta: "No se ha podido guardar el credito" });
+
+    return res.status(201).send({
+      respuesta: "El credito se registro correctamente",
+    });
+  });
+};
+
+const savePaid = async (req, res) => {
+  const { id, credit_id, value, date } = req.body;
+  const total_value = value * 1000;
+
+  const newPaid = {
+    id,
+    credit_id,
+    value: total_value,
+    date,
+  };
+
+  await db.query("INSERT INTO paids set ?", [newPaid], (err, newPaid) => {
+    if (err)
+      return res
+        .status(500)
+        .send({ respuesta: "Error al guardar el pago." });
+
+    if (!newPaid)
+      return res
+        .status(404)
+        .send({ respuesta: "No se ha podido guardar el pago" });
+
+    return res.status(201).send({
+      respuesta: "El pago se registro correctamente",
+    });
+  });
+};
+
+const getCredits = async (req, res) => {
+
+  const id = req.params.id;
+
+  await db.query(
+    "SELECT cr.id, c.name, cr.total, DATE_FORMAT(cr.date, '%Y-%m-%d') AS date FROM clients c, credits cr WHERE c.id = cr.client_id AND payment_id = ? ORDER BY cr.register_date DESC", [id],
+    (err, rows) => {
+      if (err)
+        return res
+          .status(500)
+          .send({ res: "Error al consultar los clientes." });
+
+      if (rows.length === 0)
+        return res.status(200).send({ res: "No existen clientes registrados" });
+
+      return res.status(200).send({
+        credits: rows,
+      });
+    }
+  );
+};
+
+const deleteCredit = async (req, res) => {
+  const id = req.params.id;
+
+  await db.query("DELETE FROM credits WHERE id = ?", [id], (err, rows) => {
+    if (err)
+      return res.status(500).send({ res: "Error al eliminar el credito." });
+
+    return res.status(200).send({
+      res: "Credito eliminado correctamente",
+    });
+  });
+};
+
+const creditInitial = async (req, res) => {
+  const id = req.params.id;
+
+  await db.query(
+    "SELECT cr.id, c.name, cr.value, cr.total, DATE_FORMAT(cr.date, '%Y-%m-%d') AS date, cr.mode, (cr.total - (SELECT COALESCE(SUM(VALUE), 0) FROM paids WHERE credit_id = cr.id)) AS balance, (SELECT COALESCE(SUM(VALUE), 0) FROM paids WHERE credit_id = cr.id) AS total_paid, cr.previous, cr.next FROM clients c, credits cr WHERE c.id = cr.client_id AND cr.previous = '0' AND cr.state = 1 AND cr.payment_id = ?",
+    [id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al consultar el credito." });
+
+      if (rows.length === 0)
+        return res.status(200).send({ res: "No existen creditos registrados" });
+
+      return res.status(200).send({
+        credit: rows,
+      });
+    }
+  );
+};
+
+const currentCredit = async (req, res) => {
+  const id = req.params.id;
+
+  await db.query(
+    "SELECT cr.id, c.name, cr.value, cr.total, cr.mode, DATE_FORMAT(cr.date, '%Y-%m-%d') AS date, (cr.total - (SELECT COALESCE(SUM(VALUE), 0) FROM paids WHERE credit_id = cr.id)) AS balance, (SELECT COALESCE(SUM(VALUE), 0) FROM paids WHERE credit_id = cr.id) AS total_paid, cr.previous, cr.next FROM clients c, credits cr WHERE c.id = cr.client_id AND cr.id = ?",
+    [id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al consultar el credito." });
+
+      if (rows.length === 0)
+        return res.status(200).send({ res: "No existen creditos registrados" });
+
+      return res.status(200).send({
+        credit: rows,
+      });
+    }
+  );
+};
+
+const finalCredit = async (req, res) => {
+  const id = req.params.id;
+
+  await db.query(
+    "SELECT id FROM credits WHERE next = '0' AND state = '1' AND payment_id = ?",
+    [id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al consultar el credito final." });
+
+      if (rows.length === 0)
+        return res.status(201).send({ res: "No existe el credito final" });
+
+      return res.status(200).send({
+        creditFinal: rows,
+      });
+    }
+  );
+};
+
+const updatePrevious = async (req, res) => {
+
+  const id = req.params.id;  
+  const { next } = req.body;
+
+  await db.query(
+    "UPDATE credits SET next = ?  WHERE id = ?",[next, id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al actualizar el credito." });
+
+      return res.status(200).send({
+        res: "El credito anterior actualizado correctamente",
+      });
+    }
+  );
+};
+
+const updateNext = async (req, res) => {
+
+  const id = req.params.id;  
+  const { previous } = req.body;
+
+  await db.query(
+    "UPDATE credits SET previous = ?  WHERE id = ?",[previous, id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al actualizar el credito." });
+
+      return res.status(200).send({
+        res: "El credito siguiente actualizado correctamente",
+      });
+    }
+  );
+};
+
+const inactivateCredit = async (req, res) => {
+
+  const id = req.params.id;  
+  const state = 0;
+
+  await db.query(
+    "UPDATE credits SET state = ?  WHERE id = ?",[state, id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al actualizar el credito." });
+
+      return res.status(200).send({
+        res: "El credito siguiente actualizado correctamente",
+      });
+    }
+  );
+};
+
+const totalCredits = async (req, res) => {
+  const paymentId = req.params.paymentId;
+  const date = req.params.date;
+
+  await db.query(
+    "SELECT COALESCE(SUM(VALUE), 0) AS total FROM credits WHERE payment_id = ? AND date = ?",
+    [paymentId, date],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al consultar el balance." });
+
+      if (rows.length === 0)
+        return res.status(200).send({ res: "No existe balance para este dia" });
+
+      return res.status(200).send({
+        totalCredits: rows,
+      });
+    }
+  );
+};
+
+const totalPaids = async (req, res) => {
+  const paymentId = req.params.paymentId;
+  const date = req.params.date;
+
+  await db.query(
+    "SELECT COALESCE(SUM(p.value), 0) AS total FROM paids p, credits c WHERE p.credit_id = c.id AND c.payment_id = ? AND p.date = ?",
+    [paymentId, date],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al consultar el balance." });
+
+      if (rows.length === 0)
+        return res.status(200).send({ res: "No existe balance para este dia" });
+
+      return res.status(200).send({
+        totalPaids: rows,
+      });
+    }
+  );
+};
+
+const saveDailyBalance = async (req, res) => {
+  const { id, payment_id, date, total_credits, total_paids, base, bills, delivery } = req.body;
+  const newBase = base * 1000
+  const newBills = bills * 1000
+
+  const newBalance = {
+    id,
+    payment_id,
+    date,
+    total_credits,
+    total_paids,
+    base: newBase,
+    bills: newBills,
+    delivery,
+  };
+
+  await db.query("INSERT INTO daily_balance set ?", [newBalance], (err, newBalance) => {
+    if (err)
+      return res
+        .status(500)
+        .send({ respuesta: "Error al guardar el balance." });
+
+    if (!newBalance)
+      return res
+        .status(404)
+        .send({ respuesta: "No se ha podido guardar el balance" });
+
+    return res.status(201).send({
+      respuesta: "El balance se registro correctamente",
+    });
+  }); 
+};
+
+module.exports = {
+  saveCredit,
+  getCredits,
+  deleteCredit,
+  creditInitial,
+  currentCredit,
+  savePaid,
+  updatePrevious,
+  updateNext,
+  finalCredit,
+  inactivateCredit,
+  totalCredits,
+  totalPaids,
+  saveDailyBalance
+};
