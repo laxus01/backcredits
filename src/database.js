@@ -1,7 +1,7 @@
 const mysql = require('mysql');
 const { promisify }= require('util');
-const { pruebaceiba } = require('./keys');
-const db = mysql.createPool(pruebaceiba);
+const { credits } = require('./keys');
+const db = mysql.createPool(credits);
 
 db.getConnection((err, connection) => {
 

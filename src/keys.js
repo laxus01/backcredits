@@ -1,8 +1,8 @@
 module.exports = {
-  pruebaceiba: {
+  credits: {
     host: "localhost",
     user: "root",
     password: "",
-    database: "prestamos",
+    database: "credits",
   },
 };
