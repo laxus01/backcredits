@@ -35,6 +35,11 @@ const getUser = async (req, res) => {
   );
 };
 
+const test = async (req, res) => {
+  console.log("conectado");
+};
+
 module.exports = {
   getUser,
+  test
 };
