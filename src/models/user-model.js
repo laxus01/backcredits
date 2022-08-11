@@ -12,7 +12,7 @@ const token = jwt.sign(payload, llave.llave, {
 const getUser = async (req, res) => {
   const { login, password } = req.body;
   await db.query(
-    "SELECT * FROM usuarios WHERE usuario = ? AND contrasena = ?",
+    "SELECT * FROM usuarios WHERE user = ? AND password = ?",
     [login, password],
     (err, rows) => {
       if (err)
@@ -29,17 +29,13 @@ const getUser = async (req, res) => {
         res: {
           message: "Autenticación correcta",
           token: token,
+          name: rows[0].name
         },
       });
     }
   );
 };
 
-const test = async (req, res) => {
-  console.log("conectado");
-};
-
 module.exports = {
   getUser,
-  test
 };
