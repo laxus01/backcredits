@@ -5,6 +5,7 @@ const PaymentsController = require("../controllers/payments-controller");
 router.post("/", PaymentsController.savePayment);
 router.get("/", PaymentsController.getPayment);
 router.delete("/:id", PaymentsController.deletePayment);
-router.patch("/:id", PaymentsController.updatePayment);
+router.put("/update/:id", PaymentsController.updatePayment);
+router.put("/inactivate/:id", PaymentsController.inactivatePayment);
 
 module.exports = router;

@@ -79,10 +79,30 @@ const updatePayment = async (req, res) => {
     "UPDATE payments SET detail = ?, initial_value = ?, date = ?  WHERE id = ?",[detail, initial_value, date, id],
     (err, rows) => {
       if (err)
-        return res.status(500).send({ res: "Error al actualizar el cobros." });
+        return res.status(500).send({ res: "Error al actualizar el cobro." });
 
       return res.status(200).send({
         res: "Cobro actualizado correctamente",
+      });
+    }
+  );
+};
+
+
+
+const inactivatePayment = async (req, res) => {
+
+  const id = req.params.id;  
+  const state = 0;
+
+  await db.query(
+    "UPDATE payments SET state = ?  WHERE id = ?",[state, id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al eliminar el cobro." });
+
+      return res.status(200).send({
+        res: "El cobro se elimino correctamente",
       });
     }
   );
@@ -93,4 +113,5 @@ module.exports = {
   getPayments,
   deletePayment,
   updatePayment,
+  inactivatePayment,
 };

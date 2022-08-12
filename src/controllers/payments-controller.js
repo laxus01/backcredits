@@ -16,6 +16,10 @@ const controller = {
   async updatePayment(req, res) {
     await payments.updatePayment(req, res);
   },
+
+  async inactivatePayment(req, res) {
+    await payments.inactivatePayment(req, res);
+  },
 };
 
 module.exports = controller;
