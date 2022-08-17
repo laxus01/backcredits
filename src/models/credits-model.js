@@ -23,7 +23,7 @@ const saveCredit = async (req, res) => {
     mode,
   };
 
-  await db.query("INSERT INTO credits set ?", [newCredit], (err, newCredit) => {
+  db.query("INSERT INTO credits set ?", [newCredit], (err, newCredit) => {
     if (err)
       return res
         .status(500)
@@ -51,7 +51,7 @@ const savePaid = async (req, res) => {
     date,
   };
 
-  await db.query("INSERT INTO paids set ?", [newPaid], (err, newPaid) => {
+  db.query("INSERT INTO paids set ?", [newPaid], (err, newPaid) => {
     if (err)
       return res
         .status(500)
@@ -72,7 +72,7 @@ const getCredits = async (req, res) => {
 
   const id = req.params.id;
 
-  await db.query(
+  db.query(
     "SELECT cr.id, c.name, cr.total, DATE_FORMAT(cr.date, '%Y-%m-%d') AS date FROM clients c, credits cr WHERE c.id = cr.client_id AND payment_id = ? ORDER BY cr.register_date DESC", [id],
     (err, rows) => {
       if (err)
@@ -93,7 +93,7 @@ const getCredits = async (req, res) => {
 const deleteCredit = async (req, res) => {
   const id = req.params.id;
 
-  await db.query("DELETE FROM credits WHERE id = ? AND id NOT IN (SELECT credit_id FROM paids WHERE value > 0)", [id], (err, rows) => {
+  db.query("DELETE FROM credits WHERE id = ?", [id], (err, rows) => {
     if (err)
       return res.status(500).send({ res: "Error al eliminar el credito." });
 
@@ -101,12 +101,22 @@ const deleteCredit = async (req, res) => {
       res: "Credito eliminado correctamente",
     });
   });
+  
+  this.deletePaids(id)
+};
+
+function deletePaids(id) {
+
+  db.query("DELETE FROM paids WHERE credit_id = ?", [id], (err, rows) => {
+    if (err) return console.log(err);
+    console.log(rows);
+  });
 };
 
 const deletePaid = async (req, res) => {
   const id = req.params.id;
 
-  await db.query("DELETE FROM paids WHERE id = ?", [id], (err, rows) => {
+  db.query("DELETE FROM paids WHERE id = ?", [id], (err, rows) => {
     if (err)
       return res.status(500).send({ res: "Error al eliminar el pago." });
 
@@ -119,7 +129,7 @@ const deletePaid = async (req, res) => {
 const creditInitial = async (req, res) => {
   const id = req.params.id;
 
-  await db.query(
+  db.query(
     "SELECT cr.id, c.name, cr.value, cr.total, DATE_FORMAT(cr.date, '%Y-%m-%d') AS date, cr.mode, (cr.total - (SELECT COALESCE(SUM(VALUE), 0) FROM paids WHERE credit_id = cr.id)) AS balance, (SELECT COALESCE(SUM(VALUE), 0) FROM paids WHERE credit_id = cr.id) AS total_paid, cr.previous, cr.next FROM clients c, credits cr WHERE c.id = cr.client_id AND cr.previous = '0' AND cr.state = 1 AND cr.payment_id = ?",
     [id],
     (err, rows) => {
@@ -139,7 +149,7 @@ const creditInitial = async (req, res) => {
 const currentCredit = async (req, res) => {
   const id = req.params.id;
 
-  await db.query(
+  db.query(
     "SELECT cr.id, c.name, cr.value, cr.total, cr.mode, DATE_FORMAT(cr.date, '%Y-%m-%d') AS date, (cr.total - (SELECT COALESCE(SUM(VALUE), 0) FROM paids WHERE credit_id = cr.id)) AS balance, (SELECT COALESCE(SUM(VALUE), 0) FROM paids WHERE credit_id = cr.id) AS total_paid, cr.previous, cr.next FROM clients c, credits cr WHERE c.id = cr.client_id AND cr.id = ?",
     [id],
     (err, rows) => {
@@ -159,7 +169,7 @@ const currentCredit = async (req, res) => {
 const finalCredit = async (req, res) => {
   const id = req.params.id;
 
-  await db.query(
+  db.query(
     "SELECT id FROM credits WHERE next = '0' AND state = '1' AND payment_id = ?",
     [id],
     (err, rows) => {
@@ -181,7 +191,7 @@ const updatePrevious = async (req, res) => {
   const id = req.params.id;  
   const { next } = req.body;
 
-  await db.query(
+  db.query(
     "UPDATE credits SET next = ?  WHERE id = ?",[next, id],
     (err, rows) => {
       if (err)
@@ -199,7 +209,7 @@ const updateNext = async (req, res) => {
   const id = req.params.id;  
   const { previous } = req.body;
 
-  await db.query(
+  db.query(
     "UPDATE credits SET previous = ?  WHERE id = ?",[previous, id],
     (err, rows) => {
       if (err)
@@ -217,7 +227,7 @@ const inactivateCredit = async (req, res) => {
   const id = req.params.id;  
   const state = 0;
 
-  await db.query(
+  db.query(
     "UPDATE credits SET state = ?  WHERE id = ?",[state, id],
     (err, rows) => {
       if (err)
@@ -234,7 +244,7 @@ const totalCredits = async (req, res) => {
   const paymentId = req.params.paymentId;
   const date = req.params.date;
 
-  await db.query(
+  db.query(
     "SELECT COALESCE(SUM(VALUE), 0) AS total FROM credits WHERE payment_id = ? AND date = ?",
     [paymentId, date],
     (err, rows) => {
@@ -255,7 +265,7 @@ const totalPaids = async (req, res) => {
   const paymentId = req.params.paymentId;
   const date = req.params.date;
 
-  await db.query(
+  db.query(
     "SELECT COALESCE(SUM(p.value), 0) AS total FROM paids p, credits c WHERE p.credit_id = c.id AND c.payment_id = ? AND p.date = ?",
     [paymentId, date],
     (err, rows) => {
@@ -273,7 +283,7 @@ const totalPaids = async (req, res) => {
 };
 
 const saveDailyBalance = async (req, res) => {
-  const { id, payment_id, date, total_credits, total_paids, base, bills, delivery } = req.body;
+  const { id, payment_id, date, base, bills, delivery } = req.body;
   const newBase = base * 1000
   const newBills = bills * 1000
 
@@ -288,7 +298,7 @@ const saveDailyBalance = async (req, res) => {
     delivery,
   };
 
-  await db.query("INSERT INTO daily_balance set ?", [newBalance], (err, newBalance) => {
+  db.query("INSERT INTO daily_balance set ?", [newBalance], (err, newBalance) => {
     if (err)
       return res
         .status(500)
@@ -312,7 +322,7 @@ const getPaidsByDay = async (req, res) => {
   const id = req.params.paymentId;
   const date = req.params.date;
 
-  await db.query(
+  db.query(
     "SELECT p.id, c.name, DATE_FORMAT(p.date, '%Y-%m-%d') AS date, p.value FROM clients c, credits cr, paids p WHERE c.id = cr.client_id AND cr.id = p.credit_id AND cr.payment_id = ? AND p.date = ? ORDER BY p.register_date ASC", [id, date],
     (err, rows) => {
       if (err)
@@ -335,7 +345,7 @@ const getCreditsByDay = async (req, res) => {
   const id = req.params.paymentId;
   const date = req.params.date;
 
-  await db.query(
+  db.query(
     "SELECT cr.id, cr.previous, cr.next, c.name, DATE_FORMAT(cr.date, '%Y-%m-%d') AS date, cr.value FROM clients c, credits cr WHERE c.id = cr.client_id AND cr.state = '1' AND cr.payment_id = ? AND cr.date = ? ORDER BY c.register_date ASC", [id, date],
     (err, rows) => {
       if (err)
@@ -357,9 +367,12 @@ const updatePaid = async (req, res) => {
 
   const id = req.params.id;  
   const { date, value } = req.body;
+  
+  const total_value = value * 1000;
 
-  await db.query(
-    "UPDATE paids SET date = ?, value = ?  WHERE id = ?",[date, value, id],
+
+  db.query(
+    "UPDATE paids SET date = ?, value = ?  WHERE id = ?",[date, total_value, id],
     (err, rows) => {
       if (err)
         return res.status(500).send({ res: "Error al actualizar el pago." });
@@ -375,9 +388,12 @@ const updateCredit = async (req, res) => {
 
   const id = req.params.id;  
   const { date, value } = req.body;
+  
+  const total_value = value * 1000;
+  const total = total_value + total_value * 0.2;
 
-  await db.query(
-    "UPDATE credits SET date = ?, value = ?  WHERE id = ?",[date, value, id],
+  db.query(
+    "UPDATE credits SET date = ?, value = ?, total = ?  WHERE id = ?",[date, total_value, total, id],
     (err, rows) => {
       if (err)
         return res.status(500).send({ res: "Error al actualizar el credito." });
@@ -408,4 +424,5 @@ module.exports = {
   getCreditsByDay,
   updatePaid,
   updateCredit,
+  deletePaids,
 };
