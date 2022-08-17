@@ -93,12 +93,25 @@ const getCredits = async (req, res) => {
 const deleteCredit = async (req, res) => {
   const id = req.params.id;
 
-  await db.query("DELETE FROM credits WHERE id = ?", [id], (err, rows) => {
+  await db.query("DELETE FROM credits WHERE id = ? AND id NOT IN (SELECT credit_id FROM paids WHERE value > 0)", [id], (err, rows) => {
     if (err)
       return res.status(500).send({ res: "Error al eliminar el credito." });
 
     return res.status(200).send({
       res: "Credito eliminado correctamente",
+    });
+  });
+};
+
+const deletePaid = async (req, res) => {
+  const id = req.params.id;
+
+  await db.query("DELETE FROM paids WHERE id = ?", [id], (err, rows) => {
+    if (err)
+      return res.status(500).send({ res: "Error al eliminar el pago." });
+
+    return res.status(200).send({
+      res: "Pago eliminado correctamente",
     });
   });
 };
@@ -292,10 +305,95 @@ const saveDailyBalance = async (req, res) => {
   }); 
 };
 
+
+
+const getPaidsByDay = async (req, res) => {
+  
+  const id = req.params.paymentId;
+  const date = req.params.date;
+
+  await db.query(
+    "SELECT p.id, c.name, DATE_FORMAT(p.date, '%Y-%m-%d') AS date, p.value FROM clients c, credits cr, paids p WHERE c.id = cr.client_id AND cr.id = p.credit_id AND cr.payment_id = ? AND p.date = ? ORDER BY p.register_date ASC", [id, date],
+    (err, rows) => {
+      if (err)
+        return res
+          .status(500)
+          .send({ res: "Error al consultar los pagos." });
+
+      if (rows.length === 0)
+        return res.status(200).send({ res: "No existen pagos registrados en esta fecha" });
+
+      return res.status(200).send({
+        paids: rows,
+      });
+    }
+  );
+};
+
+const getCreditsByDay = async (req, res) => {
+
+  const id = req.params.paymentId;
+  const date = req.params.date;
+
+  await db.query(
+    "SELECT cr.id, cr.previous, cr.next, c.name, DATE_FORMAT(cr.date, '%Y-%m-%d') AS date, cr.value FROM clients c, credits cr WHERE c.id = cr.client_id AND cr.state = '1' AND cr.payment_id = ? AND cr.date = ? ORDER BY c.register_date ASC", [id, date],
+    (err, rows) => {
+      if (err)
+        return res
+          .status(500)
+          .send({ res: "Error al consultar los pagos." });
+
+      if (rows.length === 0)
+        return res.status(200).send({ res: "No existen pagos registrados en esta fecha" });
+
+      return res.status(200).send({
+        credits: rows,
+      });
+    }
+  );
+};
+
+const updatePaid = async (req, res) => {
+
+  const id = req.params.id;  
+  const { date, value } = req.body;
+
+  await db.query(
+    "UPDATE paids SET date = ?, value = ?  WHERE id = ?",[date, value, id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al actualizar el pago." });
+
+      return res.status(200).send({
+        res: "El pago se actualizo correctamente",
+      });
+    }
+  );
+};
+
+const updateCredit = async (req, res) => {
+
+  const id = req.params.id;  
+  const { date, value } = req.body;
+
+  await db.query(
+    "UPDATE credits SET date = ?, value = ?  WHERE id = ?",[date, value, id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al actualizar el credito." });
+
+      return res.status(200).send({
+        res: "El credito siguiente actualizado correctamente",
+      });
+    }
+  );
+};
+
 module.exports = {
   saveCredit,
   getCredits,
   deleteCredit,
+  deletePaid,
   creditInitial,
   currentCredit,
   savePaid,
@@ -305,5 +403,9 @@ module.exports = {
   inactivateCredit,
   totalCredits,
   totalPaids,
-  saveDailyBalance
+  saveDailyBalance,
+  getPaidsByDay,
+  getCreditsByDay,
+  updatePaid,
+  updateCredit,
 };

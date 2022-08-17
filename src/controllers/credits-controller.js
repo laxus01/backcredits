@@ -13,6 +13,10 @@ const controller = {
     await credits.deleteCredit(req, res);
   },
 
+  async deletePaid(req, res) {
+    await credits.deletePaid(req, res);
+  },
+
   async creditInitial(req, res) {
     await credits.creditInitial(req, res);
   },
@@ -51,6 +55,22 @@ const controller = {
 
   async saveDailyBalance(req, res) {
     await credits.saveDailyBalance(req, res);
+  },
+
+  async getPaidsByDay(req, res) {
+    await credits.getPaidsByDay(req, res);
+  },
+
+  async getCreditsByDay(req, res) {
+    await credits.getCreditsByDay(req, res);
+  },
+
+  async updatePaid(req, res) {
+    await credits.updatePaid(req, res);
+  },
+
+  async updateCredit(req, res) {
+    await credits.updateCredit(req, res);
   },
 };
 
