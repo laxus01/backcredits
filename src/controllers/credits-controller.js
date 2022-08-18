@@ -72,6 +72,10 @@ const controller = {
   async updateCredit(req, res) {
     await credits.updateCredit(req, res);
   },
+
+  async getActualState(req, res) {
+    await credits.getActualState(req, res);
+  },
 };
 
 module.exports = controller;

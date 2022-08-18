@@ -90,6 +90,28 @@ const getCredits = async (req, res) => {
   );
 };
 
+const getActualState = async (req, res) => {
+
+  const id = req.params.paymentId;
+
+  db.query(
+    "SELECT SUM(value) AS total_credits, SUM(total) AS total, (SELECT SUM(p.value) FROM credits c, paids p WHERE c.payment_id = ? AND c.id = p.credit_id AND c.state = '1') total_paids FROM credits WHERE payment_id = ? AND state = '1' ", [id, id],
+    (err, rows) => {
+      if (err)
+        return res
+          .status(500)
+          .send({ res: "Error al consultar los clientes." });
+
+      if (rows.length === 0)
+        return res.status(200).send({ res: "No existen clientes registrados" });
+
+      return res.status(200).send({
+        state: rows,
+      });
+    }
+  );
+};
+
 const deleteCredit = async (req, res) => {
   const id = req.params.id;
 
@@ -425,4 +447,5 @@ module.exports = {
   updatePaid,
   updateCredit,
   deletePaids,
+  getActualState,
 };
