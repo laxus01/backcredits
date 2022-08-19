@@ -6,6 +6,7 @@ const config = require("./configs/config");
 const paymentsPath = "/api/payments";
 const clientsPath = "/api/clients";
 const creditsPath = "/api/credits";
+const reportsPath = "/api/reports";
 const usersPath = "/users";
 
 // Intializations
@@ -26,6 +27,7 @@ app.use(cors());
 app.use(paymentsPath, require("./routes/payments-route"));
 app.use(clientsPath, require("./routes/clients-route"));
 app.use(creditsPath, require("./routes/credits-route"));
+app.use(reportsPath, require("./routes/reports-route"));
 app.use(usersPath, require("./routes/user-route"));
 
 

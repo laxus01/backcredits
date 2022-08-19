@@ -313,8 +313,6 @@ const saveDailyBalance = async (req, res) => {
     id,
     payment_id,
     date,
-    total_credits,
-    total_paids,
     base: newBase,
     bills: newBills,
     delivery,
