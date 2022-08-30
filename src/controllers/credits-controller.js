@@ -37,6 +37,10 @@ const controller = {
     await credits.updateNext(req, res);
   },
 
+  async activateCredit(req, res) {
+    await credits.activateCredit(req, res);
+  },
+
   async inactivateCredit(req, res) {
     await credits.inactivateCredit(req, res);
   },

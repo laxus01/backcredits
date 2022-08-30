@@ -3,11 +3,12 @@ const db = require("../database");
 const savePayment = async (req, res) => {
   const { id, detail, initial_value, date } = req.body;
   const register_date = null;
+  const newInitialValue = initial_value * 1000000
 
   const newPayment = {
     id,
     detail,
-    initial_value,
+    initial_value: newInitialValue,
     date,
     register_date,
   };
@@ -73,10 +74,11 @@ const updatePayment = async (req, res) => {
 
   const id = req.params.id;  
   const { detail, initial_value, date } = req.body;
+  const newInitialValue = initial_value * 1000000
 
 
   await db.query(
-    "UPDATE payments SET detail = ?, initial_value = ?, date = ?  WHERE id = ?",[detail, initial_value, date, id],
+    "UPDATE payments SET detail = ?, initial_value = ?, date = ?  WHERE id = ?",[detail, newInitialValue, date, id],
     (err, rows) => {
       if (err)
         return res.status(500).send({ res: "Error al actualizar el cobro." });

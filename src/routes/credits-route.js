@@ -16,6 +16,7 @@ router.put("/next/:id", CreditsController.updateNext);
 router.put("/updatePaid/:id", CreditsController.updatePaid);
 router.put("/updateCredit/:id", CreditsController.updateCredit);
 router.put("/next/:id", CreditsController.updateNext);
+router.put("/activate/:id", CreditsController.activateCredit);
 router.put("/inactivate/:id", CreditsController.inactivateCredit);
 router.get("/totalCredits/paymentId/:paymentId/date/:date", CreditsController.totalCredits);
 router.get("/totalPaids/paymentId/:paymentId/date/:date", CreditsController.totalPaids);

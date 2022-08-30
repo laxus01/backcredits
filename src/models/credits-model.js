@@ -244,6 +244,24 @@ const updateNext = async (req, res) => {
   );
 };
 
+const activateCredit = async (req, res) => {
+
+  const id = req.params.id;  
+  const state = 1;
+
+  db.query(
+    "UPDATE credits SET state = ?  WHERE id = ?",[state, id],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al actualizar el credito." });
+
+      return res.status(200).send({
+        res: "El credito siguiente actualizado correctamente",
+      });
+    }
+  );
+};
+
 const inactivateCredit = async (req, res) => {
 
   const id = req.params.id;  
@@ -343,7 +361,7 @@ const getPaidsByDay = async (req, res) => {
   const date = req.params.date;
 
   db.query(
-    "SELECT p.id, c.name, DATE_FORMAT(p.date, '%Y-%m-%d') AS date, p.value FROM clients c, credits cr, paids p WHERE c.id = cr.client_id AND cr.id = p.credit_id AND cr.payment_id = ? AND p.date = ? ORDER BY p.register_date ASC", [id, date],
+    "SELECT p.id, cr.id AS credit_id, cr.next, cr.previous, cr.state, (SELECT (c.total - (SUM(p.value))) FROM paids p, credits c WHERE c.id = p.credit_id AND c.id = cr.id) AS balance, p.id, c.name, DATE_FORMAT(p.date, '%Y-%m-%d') AS date, p.value FROM clients c, credits cr, paids p WHERE c.id = cr.client_id AND cr.id = p.credit_id AND cr.payment_id = ? AND p.date = ? ORDER BY p.register_date ASC", [id, date],
     (err, rows) => {
       if (err)
         return res
@@ -436,6 +454,7 @@ module.exports = {
   updatePrevious,
   updateNext,
   finalCredit,
+  activateCredit,
   inactivateCredit,
   totalCredits,
   totalPaids,
