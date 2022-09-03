@@ -443,6 +443,27 @@ const updateCredit = async (req, res) => {
   );
 };
 
+const dailyBalance = async (req, res) => {
+  const paymentId = req.params.paymentId;
+  const date = req.params.date;
+
+  db.query(
+    "SELECT base, bills, delivery, (SELECT COALESCE(SUM(p.value), 0) FROM paids p, credits c WHERE c.id = p.credit_id AND c.payment_id = ? AND p.date = ?) AS total_paids, (SELECT COALESCE(SUM(value), 0) FROM credits WHERE payment_id = ? AND date = ?) AS total_credits FROM daily_balance WHERE payment_id = ? AND date = ?",
+    [paymentId, date, paymentId, date, paymentId, date],
+    (err, rows) => {
+      if (err)
+        return res.status(500).send({ res: "Error al consultar el balance." });
+
+      if (rows.length === 0)
+        return res.status(200).send({ res: "No existe balance para este dia" });
+
+      return res.status(200).send({
+        report: rows,
+      });
+    }
+  );
+};
+
 module.exports = {
   saveCredit,
   getCredits,
@@ -465,4 +486,5 @@ module.exports = {
   updateCredit,
   deletePaids,
   getActualState,
+  dailyBalance,
 };

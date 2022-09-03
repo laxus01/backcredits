@@ -23,5 +23,6 @@ router.get("/totalPaids/paymentId/:paymentId/date/:date", CreditsController.tota
 router.get("/getPaidsByDay/paymentId/:paymentId/date/:date", CreditsController.getPaidsByDay);
 router.get("/getCreditsByDay/paymentId/:paymentId/date/:date", CreditsController.getCreditsByDay);
 router.get("/getActualState/:paymentId", CreditsController.getActualState);
+router.get("/dailyBalance/paymentId/:paymentId/date/:date", CreditsController.dailyBalance);
 
 module.exports = router;

@@ -80,6 +80,10 @@ const controller = {
   async getActualState(req, res) {
     await credits.getActualState(req, res);
   },
+
+  async dailyBalance(req, res) {
+    await credits.dailyBalance(req, res);
+  },
 };
 
 module.exports = controller;
