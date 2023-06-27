@@ -13,10 +13,9 @@ const savePayment = async (req, res) => {
     register_date,
   };
 
-  await db.query(
-    "INSERT INTO payments set ?",
-    [newPayment],
-    (err, paymentsStored) => {
+  db.query(
+    "INSERT INTO payments set ?", [newPayment], (err, paymentsStored) => {
+      console.log(err);
       if (err)
         return res
           .status(500)
@@ -35,7 +34,7 @@ const savePayment = async (req, res) => {
 };
 
 const getPayments = async (req, res) => {
-  await db.query(
+  db.query(
     "SELECT id, detail, initial_value, DATE_FORMAT(date, '%Y-%m-%d') AS date FROM payments WHERE state = '1' ORDER BY register_date DESC",
     (err, rows) => {
       if (err)
@@ -57,7 +56,7 @@ const deletePayment = async (req, res) => {
 
   const id = req.params.id;
 
-  await db.query(
+  db.query(
     "DELETE FROM payments WHERE id = ?",[id],
     (err, rows) => {
       if (err)
@@ -77,7 +76,7 @@ const updatePayment = async (req, res) => {
   const newInitialValue = initial_value * 1000000
 
 
-  await db.query(
+  db.query(
     "UPDATE payments SET detail = ?, initial_value = ?, date = ?  WHERE id = ?",[detail, newInitialValue, date, id],
     (err, rows) => {
       if (err)
@@ -97,7 +96,7 @@ const inactivatePayment = async (req, res) => {
   const id = req.params.id;  
   const state = 0;
 
-  await db.query(
+  db.query(
     "UPDATE payments SET state = ?  WHERE id = ?",[state, id],
     (err, rows) => {
       if (err)
