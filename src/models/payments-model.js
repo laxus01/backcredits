@@ -2,7 +2,6 @@ const db = require("../database");
 
 const savePayment = async (req, res) => {
   const { id, detail, initial_value, date } = req.body;
-  const register_date = null;
   const newInitialValue = initial_value * 1000000
 
   const newPayment = {
@@ -10,7 +9,6 @@ const savePayment = async (req, res) => {
     detail,
     initial_value: newInitialValue,
     date,
-    register_date,
   };
 
   db.query(
